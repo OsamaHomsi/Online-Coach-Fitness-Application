@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Test</title>
+</head>
+<body>
+  <h1>Socket.IO Test</h1>
+  <input id="message" type="text" placeholder="Enter message" />
+  <button onclick="sendMessage()">Send Message</button>
+  <ul id="messages"></ul>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      socket.emit('createGroup', 'test-group');
+    });
+
+    socket.on('message', (message) => {
+      console.log('New message:', message);
+      const li = document.createElement('li');
+      li.textContent = message;
+      document.getElementById('messages').appendChild(li);
+    });
+
+    function sendMessage() {
+      const message = document.getElementById('message').value;
+      socket.emit('sendMessage', { groupId: 'test-group', message: message });
+      document.getElementById('message').value = '';
+    }
+  </script>
+</body>
+</html>
