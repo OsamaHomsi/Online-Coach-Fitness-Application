@@ -1,8 +1,4 @@
 {
-  "name": "testLocalOnlinecoach",
-  "version": "1.0.0",
-  "description": "Your project description",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },

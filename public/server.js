@@ -23,46 +23,10 @@ mongoose
   })
   .then(() => console.log("DB connection successful"));
 
-// User schema
-const userSchema = new mongoose.Schema(
-  {
-    username: { type: String, required: true },
-    password: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-  },
-  { collection: "myusers" }
-);
-
-const User = mongoose.model("User", userSchema);
-
-// Profile schema
-const profileSchema = new mongoose.Schema(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    photo: { type: String },
-    age: { type: Number, required: true },
-    weight: { type: Number, required: true },
-    height: { type: Number, required: true },
-  },
-  { collection: "profiles" }
-);
-
-const Profile = mongoose.model("Profile", profileSchema);
-
-// Middleware to parse request bodies
 app.use(express.json());
-
-// Serve static files from the 'uploads' directory
 app.use("/uploads", express.static("uploads"));
-
-// Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, "public")));
 
-// Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
   const token = req.header("Authorization").replace("Bearer ", "");
   if (!token)
@@ -79,7 +43,6 @@ const verifyToken = (req, res, next) => {
   }
 };
 
-// Login API
 app.post("/login", async (req, res) => {
   const { userName: username, passWord: password } = req.body;
 
@@ -106,7 +69,6 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Signup API
 app.post("/signup", async (req, res) => {
   const { userName: username, passWord: password, email } = req.body;
 
@@ -139,11 +101,10 @@ app.post("/signup", async (req, res) => {
   }
 });
 
-// Create profile API
 app.post("/profile", verifyToken, upload.single("photo"), async (req, res) => {
   const { age, weight, height } = req.body;
-  const userId = req.user.userId; // Obtained from the token
-  const photo = req.file.path; // Path to the uploaded photo
+  const userId = req.user.userId;
+  const photo = req.file.path;
 
   try {
     const newProfile = new Profile({
@@ -164,9 +125,8 @@ app.post("/profile", verifyToken, upload.single("photo"), async (req, res) => {
   }
 });
 
-// View profile API
 app.get("/viewmyprofile", verifyToken, async (req, res) => {
-  const userId = req.user.userId; // Obtained from the token
+  const userId = req.user.userId;
 
   try {
     const profile = await Profile.findOne({
@@ -176,7 +136,6 @@ app.get("/viewmyprofile", verifyToken, async (req, res) => {
       return res.status(404).json({ message: "Profile not found" });
     }
 
-    // Construct the full URL for the photo
     const photoUrl = `${req.protocol}://${req.get("host")}/${profile.photo}`;
 
     res.status(200).json({
@@ -193,44 +152,36 @@ app.get("/viewmyprofile", verifyToken, async (req, res) => {
   }
 });
 
-// Middleware to serve static files
 app.use(express.static("public"));
 
-// Root endpoint
 app.get("/", (req, res) => {
   console.log("Serving index.html");
   res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Socket.IO connection
 io.on("connection", (socket) => {
   console.log("New client connected");
 
-  // User creates a group
   socket.on("createGroup", (groupId) => {
     socket.join(groupId);
     console.log(`Group ${groupId} created and user joined`);
   });
 
-  // User joins a group
   socket.on("joinGroup", (groupId) => {
     socket.join(groupId);
     console.log(`User joined group ${groupId}`);
   });
 
-  // User sends a message
   socket.on("sendMessage", (data) => {
     const { groupId, message } = data;
     io.to(groupId).emit("message", message);
   });
 
-  // Handle disconnection
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
 });
 
-// Start server on port 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
